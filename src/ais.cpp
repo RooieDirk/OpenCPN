@@ -51,6 +51,7 @@
 #include "AISTargetAlertDialog.h"
 #include "AISTargetQueryDialog.h"
 #include "wx28compat.h"
+#include "trialmanoeuvre.h"
 
 extern  int             s_dns_test_flag;
 extern  Select          *pSelectAIS;
@@ -134,6 +135,10 @@ extern float            g_ChartScaleFactorExp;
 
 extern PlugInManager    *g_pi_manager;
 extern ocpnStyle::StyleManager* g_StyleManager;
+
+extern bool             g_ShowTrial_man;
+extern TrialManoeuvreWin *g_TrialManWin;
+extern Select           *pSelect;
 
 #if !defined(NAN)
 static const long long lNaN = 0xfff8000000000000;
@@ -870,6 +875,9 @@ static void AISDrawTarget( AIS_Target_Data *td, ocpnDC& dc )
     //    Target is lost due to position report time-out, but still in Target List
     if( td->b_lost ) return;
     
+    if ( g_ShowTrial_man )
+        td = g_TrialManWin->SetTrialAisData( td );
+    
     float scale_factor = 1.0;
 //    if(g_bresponsive){
         scale_factor =  g_ChartScaleFactorExp;
@@ -1110,92 +1118,96 @@ static void AISDrawTarget( AIS_Target_Data *td, ocpnDC& dc )
 
     if( td->b_positionDoubtful ) target_brush = wxBrush( GetGlobalColor( _T ( "UINFF" ) ) );
 
-    //    Check for alarms here, maintained by AIS class timer tick
-    if( ((td->n_alert_state == AIS_ALERT_SET) && (td->bCPA_Valid)) || (td->b_show_AIS_CPA && (td->bCPA_Valid))) {
-        //  Calculate the point of CPA for target
-        double tcpa_lat, tcpa_lon;
-        ll_gc_ll( td->Lat, td->Lon, td->COG, target_sog * td->TCPA / 60., &tcpa_lat, &tcpa_lon );
-        wxPoint tCPAPoint;
-        wxPoint TPoint = TargetPoint;
-        cc1->GetCanvasPointPix( tcpa_lat, tcpa_lon, &tCPAPoint );
-
-        //  Draw the intercept line from target
-        ClipResult res = cohen_sutherland_line_clip_i( &TPoint.x, &TPoint.y, &tCPAPoint.x,
-                                                       &tCPAPoint.y, 0, cc1->GetVP().pix_width, 0, cc1->GetVP().pix_height );
-
-        if( res != Invisible ) {
-            wxPen ppPen2( URED, 2, wxPENSTYLE_USER_DASH );
-            ppPen2.SetDashes( 2, dash_long );
-            dc.SetPen( ppPen2 );
-
-            dc.StrokeLine( TPoint.x, TPoint.y, tCPAPoint.x, tCPAPoint.y );
-        }
-
-        //  Calculate the point of CPA for ownship
-        double ocpa_lat, ocpa_lon;
-
-        //  Detect and handle the case where ownship COG is undefined....
-        if( wxIsNaN(gCog) || wxIsNaN( gSog ) ) {
-            ocpa_lat = gLat;
-            ocpa_lon = gLon;
-        }
-        else {
-            ll_gc_ll( gLat, gLon, gCog, gSog * td->TCPA / 60., &ocpa_lat, &ocpa_lon );
-        }
-
-        wxPoint oCPAPoint;
-
-        cc1->GetCanvasPointPix( ocpa_lat, ocpa_lon, &oCPAPoint );
-        cc1->GetCanvasPointPix( tcpa_lat, tcpa_lon, &tCPAPoint );
-
-        //        Save a copy of these unclipped points
-        wxPoint oCPAPoint_unclipped = oCPAPoint;
-        wxPoint tCPAPoint_unclipped = tCPAPoint;
-
-        //  Draw a line from target CPA point to ownship CPA point
-        ClipResult ores = cohen_sutherland_line_clip_i( &tCPAPoint.x, &tCPAPoint.y,
-                                                        &oCPAPoint.x, &oCPAPoint.y, 0, cc1->GetVP().pix_width, 0, cc1->GetVP().pix_height );
-
-        if( ores != Invisible ) {
-            wxColour yellow = GetGlobalColor( _T ( "YELO1" ) );
-            dc.SetPen( wxPen( yellow, 4 ) );
-            dc.StrokeLine( tCPAPoint.x, tCPAPoint.y, oCPAPoint.x, oCPAPoint.y );
-
-            wxPen ppPen2( URED, 2, wxPENSTYLE_USER_DASH );
-            ppPen2.SetDashes( 2, dash_long );
-            dc.SetPen( ppPen2 );
-            dc.StrokeLine( tCPAPoint.x, tCPAPoint.y, oCPAPoint.x, oCPAPoint.y );
-
-            //        Draw little circles at the ends of the CPA alert line
-            wxBrush br( GetGlobalColor( _T ( "BLUE3" ) ) );
-            dc.SetBrush( br );
-            dc.SetPen( wxPen( UBLCK ) );
-
-            //  Using the true ends, not the clipped ends
-            dc.StrokeCircle( tCPAPoint_unclipped.x, tCPAPoint_unclipped.y, 5 );
-            dc.StrokeCircle( oCPAPoint_unclipped.x, oCPAPoint_unclipped.y, 5 );
-        }
-
-        // Draw the intercept line from ownship
-        wxPoint oShipPoint;
-        cc1->GetCanvasPointPix ( gLat, gLon, &oShipPoint );
-        oCPAPoint = oCPAPoint_unclipped;    // recover the unclipped point
-
-        ClipResult ownres = cohen_sutherland_line_clip_i ( &oShipPoint.x, &oShipPoint.y,
-                                                           &oCPAPoint.x, &oCPAPoint.y,
-                                                           0, cc1->GetVP().pix_width, 0, cc1->GetVP().pix_height );
-
-        if ( ownres != Invisible ) {
-            wxPen ppPen2 ( URED, 2, wxPENSTYLE_USER_DASH );
-            ppPen2.SetDashes( 2, dash_long );
-            dc.SetPen(ppPen2);
-
-            dc.StrokeLine ( oShipPoint.x, oShipPoint.y, oCPAPoint.x, oCPAPoint.y );
-        } //TR : till here
+//     //    Check for alarms here, maintained by AIS class timer tick
+//     if( ((td->n_alert_state == AIS_ALERT_SET) && (td->bCPA_Valid)) || (td->b_show_AIS_CPA && (td->bCPA_Valid))) {
+//         //  Calculate the point of CPA for target
+//         double tcpa_lat, tcpa_lon;
+//         ll_gc_ll( td->Lat, td->Lon, td->COG, target_sog * td->TCPA / 60., &tcpa_lat, &tcpa_lon );
+//         wxPoint tCPAPoint;
+//         wxPoint TPoint = TargetPoint;
+//         cc1->GetCanvasPointPix( tcpa_lat, tcpa_lon, &tCPAPoint );
+    if (g_ShowTrial_man )
+        AISDrawCPA( td, dc, g_TrialManWin->LatTrial, g_TrialManWin->LonTrial, 
+                    g_TrialManWin->CogTrial, g_TrialManWin->SogTrial);
+    else
+        AISDrawCPA( td, dc, gLat, gLon, gCog, gSog);
+//         //  Draw the intercept line from target
+//         ClipResult res = cohen_sutherland_line_clip_i( &TPoint.x, &TPoint.y, &tCPAPoint.x,
+//                                                        &tCPAPoint.y, 0, cc1->GetVP().pix_width, 0, cc1->GetVP().pix_height );
+// 
+//         if( res != Invisible ) {
+//             wxPen ppPen2( URED, 2, wxPENSTYLE_USER_DASH );
+//             ppPen2.SetDashes( 2, dash_long );
+//             dc.SetPen( ppPen2 );
+// 
+//             dc.StrokeLine( TPoint.x, TPoint.y, tCPAPoint.x, tCPAPoint.y );
+//         }
+// 
+//         //  Calculate the point of CPA for ownship
+//         double ocpa_lat, ocpa_lon;
+// 
+//         //  Detect and handle the case where ownship COG is undefined....
+//         if( wxIsNaN(gCog) || wxIsNaN( gSog ) ) {
+//             ocpa_lat = gLat;
+//             ocpa_lon = gLon;
+//         }
+//         else {
+//             ll_gc_ll( gLat, gLon, gCog, gSog * td->TCPA / 60., &ocpa_lat, &ocpa_lon );
+//         }
+// 
+//         wxPoint oCPAPoint;
+// 
+//         cc1->GetCanvasPointPix( ocpa_lat, ocpa_lon, &oCPAPoint );
+//         cc1->GetCanvasPointPix( tcpa_lat, tcpa_lon, &tCPAPoint );
+// 
+//         //        Save a copy of these unclipped points
+//         wxPoint oCPAPoint_unclipped = oCPAPoint;
+//         wxPoint tCPAPoint_unclipped = tCPAPoint;
+// 
+//         //  Draw a line from target CPA point to ownship CPA point
+//         ClipResult ores = cohen_sutherland_line_clip_i( &tCPAPoint.x, &tCPAPoint.y,
+//                                                         &oCPAPoint.x, &oCPAPoint.y, 0, cc1->GetVP().pix_width, 0, cc1->GetVP().pix_height );
+// 
+//         if( ores != Invisible ) {
+//             wxColour yellow = GetGlobalColor( _T ( "YELO1" ) );
+//             dc.SetPen( wxPen( yellow, 4 ) );
+//             dc.StrokeLine( tCPAPoint.x, tCPAPoint.y, oCPAPoint.x, oCPAPoint.y );
+// 
+//             wxPen ppPen2( URED, 2, wxPENSTYLE_USER_DASH );
+//             ppPen2.SetDashes( 2, dash_long );
+//             dc.SetPen( ppPen2 );
+//             dc.StrokeLine( tCPAPoint.x, tCPAPoint.y, oCPAPoint.x, oCPAPoint.y );
+// 
+//             //        Draw little circles at the ends of the CPA alert line
+//             wxBrush br( GetGlobalColor( _T ( "BLUE3" ) ) );
+//             dc.SetBrush( br );
+//             dc.SetPen( wxPen( UBLCK ) );
+// 
+//             //  Using the true ends, not the clipped ends
+//             dc.StrokeCircle( tCPAPoint_unclipped.x, tCPAPoint_unclipped.y, 5 );
+//             dc.StrokeCircle( oCPAPoint_unclipped.x, oCPAPoint_unclipped.y, 5 );
+//         }
+// 
+//         // Draw the intercept line from ownship
+//         wxPoint oShipPoint;
+//         cc1->GetCanvasPointPix ( gLat, gLon, &oShipPoint );
+//         oCPAPoint = oCPAPoint_unclipped;    // recover the unclipped point
+// 
+//         ClipResult ownres = cohen_sutherland_line_clip_i ( &oShipPoint.x, &oShipPoint.y,
+//                                                            &oCPAPoint.x, &oCPAPoint.y,
+//                                                            0, cc1->GetVP().pix_width, 0, cc1->GetVP().pix_height );
+// 
+//         if ( ownres != Invisible ) {
+//             wxPen ppPen2 ( URED, 2, wxPENSTYLE_USER_DASH );
+//             ppPen2.SetDashes( 2, dash_long );
+//             dc.SetPen(ppPen2);
+// 
+//             dc.StrokeLine ( oShipPoint.x, oShipPoint.y, oCPAPoint.x, oCPAPoint.y );
+//         } //TR : till here
 
         dc.SetPen( wxPen( UBLCK ) );
         dc.SetBrush( wxBrush( URED ) );
-    }
+//    }
 
     //  Highlight the AIS target symbol if an alert dialog is currently open for it
     if( g_pais_alert_dialog_active && g_pais_alert_dialog_active->IsShown() ) {
@@ -1628,13 +1640,112 @@ static void AISDrawTarget( AIS_Target_Data *td, ocpnDC& dc )
         if(!dc.GetDC())
             glEnd();
 #endif
-    }           // Draw tracks
+    }  // Draw tracks
+}
+
+void AISDrawCPA(AIS_Target_Data *td, ocpnDC& dc, double lLat, double lLon, double lCog, double lSog )
+{
+    //    If target's speed is unavailable, use zero for further calculations
+    float target_sog = td->SOG;
+    if( (td->SOG > 102.2) && !td->b_SarAircraftPosnReport )
+        target_sog = 0.;
+    wxColour URED = GetGlobalColor( _T ( "URED" ));
+    wxColour UBLCK = GetGlobalColor( _T ( "UBLCK" ));
+    wxDash dash_long[2];
+    dash_long[0] = (int) ( 1.0 * cc1->GetPixPerMM() );  // Long dash  <---------+
+    dash_long[1] = (int) ( 0.5 * cc1->GetPixPerMM() );  // Short gap            |
+    
+    //    Check for alarms here, maintained by AIS class timer tick
+    if( ((td->n_alert_state == AIS_ALERT_SET) && (td->bCPA_Valid)) || (td->b_show_AIS_CPA && (td->bCPA_Valid))) {
+        //  Calculate the point of CPA for target
+        double tcpa_lat, tcpa_lon;
+        ll_gc_ll( td->Lat, td->Lon, td->COG, target_sog * td->TCPA / 60., &tcpa_lat, &tcpa_lon );
+        wxPoint TargetPoint;
+        wxPoint tCPAPoint;
+//        wxPoint TPoint;
+        cc1->GetCanvasPointPix( td->Lat, td->Lon, &TargetPoint );
+        cc1->GetCanvasPointPix( tcpa_lat, tcpa_lon, &tCPAPoint );
+        wxPoint TPoint = TargetPoint;
+    //  Draw the intercept line from target
+        ClipResult res = cohen_sutherland_line_clip_i( &TPoint.x, &TPoint.y, &tCPAPoint.x,
+                                                       &tCPAPoint.y, 0, cc1->GetVP().pix_width, 0, cc1->GetVP().pix_height );
+
+        if( res != Invisible ) {
+            wxPen ppPen2( URED, 2, wxPENSTYLE_USER_DASH );
+            ppPen2.SetDashes( 2, dash_long );
+            dc.SetPen( ppPen2 );
+
+            dc.StrokeLine( TPoint.x, TPoint.y, tCPAPoint.x, tCPAPoint.y );
+        }
+
+        //  Calculate the point of CPA for ownship
+        double ocpa_lat, ocpa_lon;
+
+        //  Detect and handle the case where ownship COG is undefined....
+        if( wxIsNaN(lCog) || wxIsNaN( lSog ) ) {
+            ocpa_lat = lLat;
+            ocpa_lon = lLon;
+        }
+        else {
+            ll_gc_ll( lLat, lLon, lCog, lSog * td->TCPA / 60., &ocpa_lat, &ocpa_lon );
+        }
+
+        wxPoint oCPAPoint;
+
+        cc1->GetCanvasPointPix( ocpa_lat, ocpa_lon, &oCPAPoint );
+        cc1->GetCanvasPointPix( tcpa_lat, tcpa_lon, &tCPAPoint );
+
+        //        Save a copy of these unclipped points
+        wxPoint oCPAPoint_unclipped = oCPAPoint;
+        wxPoint tCPAPoint_unclipped = tCPAPoint;
+
+        //  Draw a line from target CPA point to ownship CPA point
+        ClipResult ores = cohen_sutherland_line_clip_i( &tCPAPoint.x, &tCPAPoint.y,
+                                                        &oCPAPoint.x, &oCPAPoint.y, 0, cc1->GetVP().pix_width, 0, cc1->GetVP().pix_height );
+
+        if( ores != Invisible ) {
+            wxColour yellow = GetGlobalColor( _T ( "YELO1" ) );
+            dc.SetPen( wxPen( yellow, 4 ) );
+            dc.StrokeLine( tCPAPoint.x, tCPAPoint.y, oCPAPoint.x, oCPAPoint.y );
+
+            wxPen ppPen2( URED, 2, wxPENSTYLE_USER_DASH );
+            ppPen2.SetDashes( 2, dash_long );
+            dc.SetPen( ppPen2 );
+            dc.StrokeLine( tCPAPoint.x, tCPAPoint.y, oCPAPoint.x, oCPAPoint.y );
+
+            //        Draw little circles at the ends of the CPA alert line
+            wxBrush br( GetGlobalColor( _T ( "BLUE3" ) ) );
+            dc.SetBrush( br );
+            dc.SetPen( wxPen( UBLCK ) );
+
+            //  Using the true ends, not the clipped ends
+            dc.StrokeCircle( tCPAPoint_unclipped.x, tCPAPoint_unclipped.y, 5 );
+            dc.StrokeCircle( oCPAPoint_unclipped.x, oCPAPoint_unclipped.y, 5 );
+        }
+
+        // Draw the intercept line from ownship
+        wxPoint oShipPoint;
+        cc1->GetCanvasPointPix ( lLat, lLon, &oShipPoint );
+        oCPAPoint = oCPAPoint_unclipped;    // recover the unclipped point
+
+        ClipResult ownres = cohen_sutherland_line_clip_i ( &oShipPoint.x, &oShipPoint.y,
+                                                           &oCPAPoint.x, &oCPAPoint.y,
+                                                           0, cc1->GetVP().pix_width, 0, cc1->GetVP().pix_height );
+
+        if ( ownres != Invisible ) {
+            wxPen ppPen2 ( URED, 2, wxPENSTYLE_USER_DASH );
+            ppPen2.SetDashes( 2, dash_long );
+            dc.SetPen(ppPen2);
+
+            dc.StrokeLine ( oShipPoint.x, oShipPoint.y, oCPAPoint.x, oCPAPoint.y );
+         } //TR : till here
+    }
 }
 
 void AISDraw( ocpnDC& dc )
 {
     if( !g_pAIS ) return;
-
+    
     // Toggling AIS display on and off
     if( !g_bShowAIS )
         return;//
