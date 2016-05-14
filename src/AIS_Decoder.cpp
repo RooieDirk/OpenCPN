@@ -33,6 +33,7 @@
 #include <fstream>
 #include "OCPNPlatform.h"
 #include "pluginmanager.h"
+#include "trialmanoeuvre.h"
 
 #if !defined(NAN)
 static const long long lNaN = 0xfff8000000000000;
@@ -114,6 +115,9 @@ static int rx_ticks;
 static double arpa_ref_hdg = NAN;
 
 extern  const wxEventType wxEVT_OCPN_DATASTREAM;
+
+extern bool             g_ShowTrial_man;
+extern TrialManoeuvreWin *g_TrialManWin;
 
 AIS_Decoder::AIS_Decoder( wxFrame *parent )
 {
@@ -2041,6 +2045,10 @@ void AIS_Decoder::UpdateAllAlarms( void )
 
 void AIS_Decoder::UpdateOneCPA( AIS_Target_Data *ptarget )
 {
+    if ( g_ShowTrial_man ) {
+        g_TrialManWin->CalcOneCPA( ptarget );
+        return;
+    }
     ptarget->Range_NM = -1.;            // Defaults
     ptarget->Brg = -1.;
 
