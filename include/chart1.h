@@ -190,6 +190,8 @@ enum
     ID_MENU_AIS_CPASOUND,
     ID_MENU_AIS_TARGETLIST,
     
+    ID_MENU_TRYMAN,
+    
     ID_MENU_SETTINGS_BASIC,
     
     ID_MENU_OQUIT,
@@ -383,6 +385,7 @@ class MyFrame: public wxFrame
     void TogglebFollow(void);
     void ToggleFullScreen();
     void ToggleChartBar();
+    void ToggleTrialManoeuvreBar();
     void SetbFollow(void);
     void ClearbFollow(void);
     void ToggleChartOutlines(void);
