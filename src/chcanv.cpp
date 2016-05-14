@@ -81,6 +81,7 @@
 #include "gshhs.h"
 #include "canvasMenu.h"
 #include "wx28compat.h"
+#include "trialmanoeuvre.h"
 
 #ifdef __OCPN__ANDROID__
 #include "androidUTIL.h"
@@ -322,6 +323,8 @@ int   last_brightness;
 int                     g_cog_predictor_width;
 extern double           g_display_size_mm;
 
+extern bool             g_ShowTrial_man;
+extern TrialManoeuvreWin *g_TrialManWin;
 
 // "Curtain" mode parameters
 wxDialog                *g_pcurtain;
@@ -3748,7 +3751,8 @@ void ChartCanvas::ComputeShipScaleFactor(float icon_hdt,
         / ( (float) g_n_ownship_length_meters / g_n_ownship_beam_meters );
 }
 
-void ChartCanvas::ShipDraw( ocpnDC& dc )
+void ChartCanvas::ShipDraw( ocpnDC& dc, double lLon, double lLat, double lCog,
+            double lSog, double lHdt )
 {
     if( !GetVP().IsValid() ) return;
 
@@ -3757,23 +3761,23 @@ void ChartCanvas::ShipDraw( ocpnDC& dc )
 
 //    Is ship in Vpoint?
 
-    if( GetVP().GetBBox().PointInBox( gLon, gLat, 0 ) ) drawit++;                             // yep
+    if( GetVP().GetBBox().PointInBox( lLon, lLat, 0 ) ) drawit++;                             // yep
 
 //    Calculate ownship Position Predictor
 
     double pred_lat, pred_lon;
 
     //  COG/SOG may be undefined in NMEA data stream
-    float pCog = gCog;
+    float pCog = lCog;
     if( wxIsNaN(pCog) )
         pCog = 0.0;
-    float pSog = gSog;
+    float pSog = lSog;
     if( wxIsNaN(pSog) )
         pSog = 0.0;
 
-    ll_gc_ll( gLat, gLon, pCog, pSog * g_ownship_predictor_minutes / 60., &pred_lat, &pred_lon );
+    ll_gc_ll( lLat, lLon, pCog, pSog * g_ownship_predictor_minutes / 60., &pred_lat, &pred_lon );
 
-    GetCanvasPointPix( gLat, gLon, &lGPSPoint );
+    GetCanvasPointPix( lLat, lLon, &lGPSPoint );
     lShipMidPoint = lGPSPoint;
     GetCanvasPointPix( pred_lat, pred_lon, &lPredPoint );
 
@@ -3790,7 +3794,7 @@ void ChartCanvas::ShipDraw( ocpnDC& dc )
     //  Draw the icon rotated to the COG
     //  or to the Hdt if available
     float icon_hdt = pCog;
-    if( !wxIsNaN( gHdt ) ) icon_hdt = gHdt;
+    if( !wxIsNaN( lHdt ) ) icon_hdt = lHdt;
 
     //  COG may be undefined in NMEA data stream
     if( wxIsNaN(icon_hdt) ) icon_hdt = 0.0;
@@ -3799,9 +3803,9 @@ void ChartCanvas::ShipDraw( ocpnDC& dc )
     double osd_head_lat, osd_head_lon;
     wxPoint osd_head_point;
 
-    ll_gc_ll( gLat, gLon, icon_hdt, pSog * 10. / 60., &osd_head_lat, &osd_head_lon );
+    ll_gc_ll( lLat, lLon, icon_hdt, pSog * 10. / 60., &osd_head_lat, &osd_head_lon );
 
-    GetCanvasPointPix( gLat, gLon, &lShipMidPoint );
+    GetCanvasPointPix( lLat, lLon, &lShipMidPoint );
     GetCanvasPointPix( osd_head_lat, osd_head_lon, &osd_head_point );
 
     float icon_rad = atan2f( (float) ( osd_head_point.y - lShipMidPoint.y ),
@@ -3814,10 +3818,10 @@ void ChartCanvas::ShipDraw( ocpnDC& dc )
 //    Calculate ownship Heading pointer as a predictor
     double hdg_pred_lat, hdg_pred_lon;
 
-    ll_gc_ll( gLat, gLon, icon_hdt, g_ownship_HDTpredictor_miles, &hdg_pred_lat,
+    ll_gc_ll( lLat, lLon, icon_hdt, g_ownship_HDTpredictor_miles, &hdg_pred_lat,
               &hdg_pred_lon );
 
-    GetCanvasPointPix( gLat, gLon, &lShipMidPoint );
+    GetCanvasPointPix( lLat, lLon, &lShipMidPoint );
     GetCanvasPointPix( hdg_pred_lat, hdg_pred_lon, &lHeadPoint );
 
     //    Is head predicted point in the VPoint?
@@ -3829,10 +3833,10 @@ void ChartCanvas::ShipDraw( ocpnDC& dc )
 
     float ndelta_pix = 10.;
     bool b_render_hdt = false;
-    if( !wxIsNaN( gHdt ) ) {
+    if( !wxIsNaN( lHdt ) ) {
         float dist = sqrtf( powf(  (float) (lHeadPoint.x - lPredPoint.x), 2) +
                             powf(  (float) (lHeadPoint.y - lPredPoint.y), 2) );
-        if( dist > ndelta_pix && !wxIsNaN(gSog) )
+        if( dist > ndelta_pix && !wxIsNaN(lSog) )
             b_render_hdt = true;
     }
 
@@ -3844,9 +3848,9 @@ void ChartCanvas::ShipDraw( ocpnDC& dc )
     // And two more tests to catch the case where COG/HDG line crosses the screen,
     // but ownship and pred point are both off
     
-    if( GetVP().GetBBox().LineIntersect( wxPoint2DDouble( gLon, gLat ),
+    if( GetVP().GetBBox().LineIntersect( wxPoint2DDouble( lLon, lLat ),
         wxPoint2DDouble( pred_lon, pred_lat ) ) ) drawit++;
-    if( GetVP().GetBBox().LineIntersect( wxPoint2DDouble( gLon, gLat ),
+    if( GetVP().GetBBox().LineIntersect( wxPoint2DDouble( lLon, lLat ),
         wxPoint2DDouble( hdg_pred_lon, hdg_pred_lat ) ) ) drawit++;
     
 //    Do the draw if either the ship or prediction is within the current VPoint
@@ -4350,8 +4354,13 @@ void ChartCanvas::UpdateShips()
 
     // Draw the ownship on the temp_dc
     ocpnDC ocpndc = ocpnDC( temp_dc );
-    ShipDraw( ocpndc );
-
+    
+    if ( !g_ShowTrial_man )
+        ShipDraw( ocpndc, gLon, gLat, gCog, gSog, gHdt );
+    else
+        ShipDraw( ocpndc, g_TrialManWin->LonTrial, g_TrialManWin->LatTrial,
+                  g_TrialManWin->CogTrial, g_TrialManWin->SogTrial, g_TrialManWin->CogTrial );
+        
     if( g_pActiveTrack && g_pActiveTrack->IsRunning() ) {
         RoutePoint* p = g_pActiveTrack->GetLastPoint();
         if( p ) {
@@ -9916,7 +9925,12 @@ void ChartCanvas::DrawOverlayObjects( ocpnDC &dc, const wxRegion& ru )
     DrawAnchorWatchPoints( dc );
 
     AISDraw( dc );
-    ShipDraw( dc );
+    if ( !g_ShowTrial_man )
+        ShipDraw( dc, gLon, gLat, gCog, gSog, gHdt );
+    else
+        ShipDraw( dc, g_TrialManWin->LonTrial, g_TrialManWin->LatTrial,
+                  g_TrialManWin->CogTrial, g_TrialManWin->SogTrial, g_TrialManWin->CogTrial );
+    
     AlertDraw( dc );
 
     RenderAllChartOutlines( dc, GetVP() );
@@ -10187,7 +10201,7 @@ void ChartCanvas::DrawAllRoutesInBBox( ocpnDC& dc, LLBBox& BltBBox, const wxRegi
                 pRouteDraw->Draw( dc, GetVP() );
             } else if( b_run ) {
                 /* it would be nicer to instead of what is below,
-                   append gLat, gLon to the route, compute the bbox, then remove it
+                   append lLat, lLon to the route, compute the bbox, then remove it
                    and just use the first test */
                 wxPoint2DDouble xlatep( 360., 0. );
                 test_box = pRouteDraw->GetBBox();
@@ -11542,4 +11556,6 @@ void DimeControl( wxWindow* ctrl, wxColour col, wxColour window_back_color, wxCo
         }
     }
 }
+
+
 
