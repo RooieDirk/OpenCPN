@@ -2361,9 +2361,9 @@ void glChartCanvas::ShipDraw( ocpnDC& dc, double lLon, double lLat, double lCog,
     // And two more tests to catch the case where COG/HDG line crosses the screen,
     // but ownship and pred point are both off
     
-    if( cc1->GetVP().GetBBox().LineIntersect( wxPoint2DDouble( gLon, gLat ),
+    if( cc1->GetVP().GetBBox().LineIntersect( wxPoint2DDouble( lLon, lLat ),
         wxPoint2DDouble( pred_lon, pred_lat ) ) ) drawit++;
-    if( cc1->GetVP().GetBBox().LineIntersect( wxPoint2DDouble( gLon, gLat ),
+    if( cc1->GetVP().GetBBox().LineIntersect( wxPoint2DDouble( lLon, lLat ),
         wxPoint2DDouble( hdg_pred_lon, hdg_pred_lat ) ) ) drawit++;
     
     //    Do the draw if either the ship or prediction is within the current VPoint
@@ -2630,9 +2630,11 @@ void glChartCanvas::DrawFloatingOverlayObjects( ocpnDC &dc )
     AISDraw( dc );
     if ( !g_ShowTrial_man )
         ShipDraw( dc, gLon, gLat, gCog, gSog, gHdt );
-    else
+    else{
         ShipDraw( dc, g_TrialManWin->LonTrial, g_TrialManWin->LatTrial,
                   g_TrialManWin->CogTrial, g_TrialManWin->SogTrial, g_TrialManWin->CogTrial );
+        
+    }
 
     cc1->AlertDraw( dc );
 
@@ -5057,4 +5059,3 @@ void glChartCanvas::onGestureTimerEvent(wxTimerEvent &event)
 
 
 #endif
-
