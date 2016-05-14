@@ -125,7 +125,7 @@ public:
     void RenderChartOutline( int dbIndex, ViewPort &VP );
 
     void DrawEmboss( emboss_data *emboss );
-    void ShipDraw(ocpnDC& dc);
+    void ShipDraw( ocpnDC& dc, double lLon, double lLat, double lCog, double lSog, double lHdt );
 
     void SetupCompression();
     bool CanAcceleratePanning() { return m_b_BuiltFBO; }
