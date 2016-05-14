@@ -453,7 +453,8 @@ private:
       void OnSize(wxSizeEvent& event);
       void MouseTimedEvent(wxTimerEvent& event);
       void MouseEvent(wxMouseEvent& event);
-      void ShipDraw(ocpnDC& dc);
+      void ShipDraw(ocpnDC& dc, double lLon, double lLat, double lCog,
+            double lSog, double lHdt );
       void DrawArrow(ocpnDC& dc, int x, int y, double rot_angle, double scale);
       void OnRolloverPopupTimerEvent ( wxTimerEvent& event );
       void FindRoutePointsAtCursor( float selectRadius, bool setBeingEdited );
