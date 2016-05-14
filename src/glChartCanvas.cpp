@@ -84,6 +84,7 @@ private:
 #include "FontMgr.h"
 #include "mipmap/mipmap.h"
 #include "chartimg.h"
+#include "trialmanoeuvre.h"
 
 #ifndef GL_ETC1_RGB8_OES
 #define GL_ETC1_RGB8_OES                                        0x8D64
@@ -183,6 +184,8 @@ extern bool             g_oz_vector_scale;
 extern TCMgr            *ptcmgr;
 extern int              g_nCPUCount;
 
+extern bool             g_ShowTrial_man;
+extern TrialManoeuvreWin *g_TrialManWin;
 
 ocpnGLOptions g_GLOptions;
 
@@ -2268,7 +2271,8 @@ void glChartCanvas::DrawEmboss( emboss_data *emboss  )
     glDisable( GL_TEXTURE_2D );
 }
 
-void glChartCanvas::ShipDraw(ocpnDC& dc)
+void glChartCanvas::ShipDraw( ocpnDC& dc, double lLon, double lLat, double lCog,
+            double lSog, double lHdt )
 {
     if( !cc1->GetVP().IsValid() ) return;
     wxPoint lGPSPoint, lShipMidPoint, lPredPoint, lHeadPoint, GPSOffsetPixels(0,0);
@@ -2277,19 +2281,19 @@ void glChartCanvas::ShipDraw(ocpnDC& dc)
 
     int drawit = 0;
     //    Is ship in Vpoint?
-    if( cc1->GetVP().GetBBox().PointInBox( gLon, gLat, 0 ) ) drawit++;                             // yep
+    if( cc1->GetVP().GetBBox().PointInBox( lLon, lLat, 0 ) ) drawit++;                             // yep
 
     //  COG/SOG may be undefined in NMEA data stream
-    float pCog = gCog;
+    float pCog = lCog;
     if( wxIsNaN(pCog) )
         pCog = 0.0;
-    float pSog = gSog;
+    float pSog = lSog;
     if( wxIsNaN(pSog) )
         pSog = 0.0;
 
-    ll_gc_ll( gLat, gLon, pCog, pSog * g_ownship_predictor_minutes / 60., &pred_lat, &pred_lon );
+    ll_gc_ll( lLat, lLon, pCog, pSog * g_ownship_predictor_minutes / 60., &pred_lat, &pred_lon );
 
-    cc1->GetCanvasPointPix( gLat, gLon, &lGPSPoint );
+    cc1->GetCanvasPointPix( lLat, lLon, &lGPSPoint );
     lShipMidPoint = lGPSPoint;
     cc1->GetCanvasPointPix( pred_lat, pred_lon, &lPredPoint );
 
@@ -2306,7 +2310,7 @@ void glChartCanvas::ShipDraw(ocpnDC& dc)
     //  Draw the icon rotated to the COG
     //  or to the Hdt if available
     float icon_hdt = pCog;
-    if( !wxIsNaN( gHdt ) ) icon_hdt = gHdt;
+    if( !wxIsNaN( lHdt ) ) icon_hdt = lHdt;
 
     //  COG may be undefined in NMEA data stream
     if( wxIsNaN(icon_hdt) ) icon_hdt = 0.0;
@@ -2315,7 +2319,7 @@ void glChartCanvas::ShipDraw(ocpnDC& dc)
     double osd_head_lat, osd_head_lon;
     wxPoint osd_head_point;
 
-    ll_gc_ll( gLat, gLon, icon_hdt, pSog * 10. / 60., &osd_head_lat, &osd_head_lon );
+    ll_gc_ll( lLat, lLon, icon_hdt, pSog * 10. / 60., &osd_head_lat, &osd_head_lon );
     
     cc1->GetCanvasPointPix( osd_head_lat, osd_head_lon, &osd_head_point );
 
@@ -2328,7 +2332,7 @@ void glChartCanvas::ShipDraw(ocpnDC& dc)
 //    Calculate ownship Heading pointer as a predictor
     double hdg_pred_lat, hdg_pred_lon;
 
-    ll_gc_ll( gLat, gLon, icon_hdt, g_ownship_HDTpredictor_miles, &hdg_pred_lat,
+    ll_gc_ll( lLat, lLon, icon_hdt, g_ownship_HDTpredictor_miles, &hdg_pred_lat,
               &hdg_pred_lon );
     
     cc1->GetCanvasPointPix( hdg_pred_lat, hdg_pred_lon, &lHeadPoint );
@@ -2342,10 +2346,10 @@ void glChartCanvas::ShipDraw(ocpnDC& dc)
 
     float ndelta_pix = 10.;
     bool b_render_hdt = false;
-    if( !wxIsNaN( gHdt ) ) {
+    if( !wxIsNaN( lHdt ) ) {
         float dist = sqrtf( powf( (float) (lHeadPoint.x - lPredPoint.x), 2) +
                             powf( (float) (lHeadPoint.y - lPredPoint.y), 2) );
-        if( dist > ndelta_pix && !wxIsNaN(gSog) )
+        if( dist > ndelta_pix && !wxIsNaN(lSog) )
             b_render_hdt = true;
     }
 
@@ -2624,7 +2628,12 @@ void glChartCanvas::DrawFloatingOverlayObjects( ocpnDC &dc )
 
     cc1->DrawAnchorWatchPoints( dc );
     AISDraw( dc );
-    ShipDraw( dc );
+    if ( !g_ShowTrial_man )
+        ShipDraw( dc, gLon, gLat, gCog, gSog, gHdt );
+    else
+        ShipDraw( dc, g_TrialManWin->LonTrial, g_TrialManWin->LatTrial,
+                  g_TrialManWin->CogTrial, g_TrialManWin->SogTrial, g_TrialManWin->CogTrial );
+
     cc1->AlertDraw( dc );
 
     cc1->RenderRouteLegs( dc );
