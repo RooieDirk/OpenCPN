@@ -107,6 +107,7 @@
 #include "AISTargetQueryDialog.h"
 #include "S57QueryDialog.h"
 #include "glTexCache.h"
+#include "trialmanoeuvre.h"
 
 #ifdef ocpnUSE_GL
 #include "glChartCanvas.h"
@@ -492,6 +493,9 @@ int                       g_border_size_default;
 int                       g_sash_size_default;
 wxColour                  g_caption_color_default;
 wxColour                  g_sash_color_default;
+
+bool                      g_ShowTrial_man;
+TrialManoeuvreWin         *g_TrialManWin;
 
 bool GetMemoryStatus(int *mem_total, int *mem_used);
 
@@ -3912,6 +3916,10 @@ void MyFrame::OnToolLeftClick( wxCommandEvent& event )
             cc1->DropMarker(false);
             break;
         }
+        case ID_MENU_TRYMAN: {
+            ToggleTrialManoeuvreBar();
+            break;
+        }
 
         case ID_MENU_NAV_FOLLOW:
         case ID_FOLLOW: {
@@ -4384,6 +4392,25 @@ void MyFrame::ToggleChartBar()
     }
 
     SetMenubarItemState( ID_MENU_UI_CHARTBAR, g_bShowChartBar );
+}
+
+void MyFrame::ToggleTrialManoeuvreBar()
+{
+    if( g_TrialManWin == NULL  ){ // if window doesn't exist yet make it
+        g_TrialManWin = new TrialManoeuvreWin( cc1 );
+        g_ShowTrial_man = false;
+    }
+    g_ShowTrial_man = !g_ShowTrial_man;
+    g_TrialManWin->doShow(g_ShowTrial_man);
+    if ( g_ShowTrial_man ){
+        g_TrialManWin->Move(0,0);
+        g_TrialManWin->RePosition();
+        gFrame->Raise();
+    }
+    SendSizeEvent();
+    cc1->ReloadVP(); // needed to set VP.pix_height
+    Refresh();
+    SetMenubarItemState( ID_MENU_TRYMAN, g_ShowTrial_man );
 }
 
 void MyFrame::ToggleColorScheme()
@@ -5097,6 +5124,8 @@ void MyFrame::RegisterGlobalMenuItems()
     tools_menu->AppendSeparator();
     tools_menu->Append( ID_MENU_MARK_BOAT, _menuText(_("Drop Mark at Boat"), _T("Ctrl-O")) );
     tools_menu->Append( ID_MENU_MARK_CURSOR, _menuText(_("Drop Mark at Cursor"), _T("Ctrl-M")) );
+    tools_menu->AppendSeparator();
+    tools_menu->AppendCheckItem( ID_MENU_TRYMAN, _("Trial Manoeuvre") );
     tools_menu->AppendSeparator();
 #ifdef __WXOSX__
     tools_menu->Append( ID_MENU_MARK_MOB, _menuText(_("Drop MOB Marker"), _T("RawCtrl-Space")) ); // NOTE Cmd+Space is reserved for Spotlight
@@ -12321,5 +12350,7 @@ bool ReloadLocale()
     return ret;
 
 }
+
+
 
 
