@@ -1278,7 +1278,7 @@ static void AISDrawTarget( AIS_Target_Data *td, ocpnDC& dc )
                             dc.StrokeCircle( PredPoint.x, PredPoint.y, 5 );
                         else
                             dc.StrokeCircle( PredPoint.x, PredPoint.y, 2 );
-                    } else {
+                    } else if( cc1->GetVP().GetBBox().Contains( pred_lat,  pred_lon ) ){
 #ifdef ocpnUSE_GL
                         
                     // draw circle
