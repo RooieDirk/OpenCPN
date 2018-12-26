@@ -988,9 +988,9 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
                 MMSIProperties *props =  g_MMSI_Props_Array[i];
                 if(mmsi == props->MMSI)
                 {
-                    pTargetData->b_OwnShip = (props->m_bVDM) ? true : false;
-                    pTargetData->b_PersistTrack = (props->m_bPersistentTrack) ? true : false;
-                    pTargetData->b_NoTrack = (props->TrackType == TRACKTYPE_NEVER) ? true : false;                    
+                    pTargetData->b_OwnShip = ( (props->m_bVDM) ? true : false );
+                    pTargetData->b_PersistTrack = ( (props->m_bPersistentTrack) ? true : false );
+                    pTargetData->b_NoTrack = ( (props->TrackType == TRACKTYPE_NEVER) ? true : false );                    
                     break;
                 }
             }
