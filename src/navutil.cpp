@@ -75,6 +75,8 @@
 #include "Track.h"
 #include "chartdb.h"
 #include "CanvasConfig.h"
+#include "routemanagerdialog.h"
+#include "MarkInfo.h"
 
 #ifdef USE_S57
 #include "s52plib.h"
@@ -448,6 +450,10 @@ extern wxString         g_lastAppliedTemplateGUID;
 
 extern int              g_route_prop_x, g_route_prop_y;
 extern int              g_route_prop_sx, g_route_prop_sy;
+
+extern LayerList        *pLayerList;
+extern MarkInfoDlg      *g_pMarkInfoDialog;
+extern RouteManagerDialog *pRouteManagerDialog;
 
 wxString                g_gpx_path;
 bool                    g_bLayersLoaded;
@@ -1715,6 +1721,63 @@ bool MyConfig::LoadLayers(wxString &path)
     }
     g_bLayersLoaded = true;
 
+    return true;
+}
+
+bool MyConfig::UnloadLayers()
+{
+    // Process Tracks and Routes in this layer
+    wxRouteListNode *node1 = pRouteList->GetFirst();
+    while( node1 ) {
+        Route *pRoute = node1->GetData();
+        wxRouteListNode *next_node = node1->GetNext();
+        if( pRoute->m_bIsInLayer ) {
+            pRoute->m_bIsInLayer = false;
+            pRoute->m_LayerID = 0;
+            g_pRouteMan->DeleteRoute( pRoute );
+        }
+        node1 = next_node;
+    }
+
+    wxTrackListNode *node2 = pTrackList->GetFirst();
+    while( node2 ) {
+        Track *pTrack = node2->GetData();
+        wxTrackListNode *next_node = node2->GetNext();
+        if( pTrack->m_bIsInLayer ) {
+            pTrack->m_bIsInLayer = false;
+            pTrack->m_LayerID = 0;
+            g_pRouteMan->DeleteTrack( pTrack );
+        }
+        node2 = next_node;
+    }
+
+    // Process waypoints in this layer
+    wxRoutePointListNode *node = pWayPointMan->GetWaypointList()->GetFirst();
+    wxRoutePointListNode *node3;
+
+    while( node ) {
+        node3 = node->GetNext();
+        RoutePoint *rp = node->GetData();
+        if( rp ) {
+            rp->m_bIsInLayer = false;
+            rp->m_LayerID = 0;
+            pWayPointMan->DestroyWaypoint( rp, false );         // no need to update the change set on layer ops
+        }
+
+        node = node3;
+        node3 = NULL;
+    }
+    
+    pLayerList->DeleteContents(true);
+    pLayerList->Clear();
+
+    if( g_pMarkInfoDialog ) {
+        g_pMarkInfoDialog->SetRoutePoint( NULL );
+        g_pMarkInfoDialog->UpdateProperties();
+    }
+  if (pRouteManagerDialog) pRouteManagerDialog->UpdateLists();
+
+    gFrame->RefreshAllCanvas();
     return true;
 }
 
@@ -3311,6 +3374,11 @@ const wxChar *ParseGPXDateTime( wxDateTime &dt, const wxChar *datetime )
 #include <wx/fontdlg.h>
 #include <wx/fontenum.h>
 #include "wx/encinfo.h"
+#include <MarkInfo.h>
+#include <MarkInfo.h>
+#include <MarkInfo.h>
+#include <routemanagerdialog.h>
+#include <MarkInfo.h>
 
 #ifdef __WXX11__
 #include "/usr/X11R6/include/X11/Xlib.h"

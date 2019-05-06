@@ -173,6 +173,7 @@ public:
       virtual void UpdateSettings();
 
       bool LoadLayers(wxString &path);
+      bool UnloadLayers();
       int LoadMyConfigRaw( bool bAsTemplate = false );
       
       void CreateRotatingNavObjBackup();
