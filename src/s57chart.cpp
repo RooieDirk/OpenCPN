@@ -5829,41 +5829,32 @@ wxString s57chart::CreateObjDescriptions(ListOfObjRazRules *rule_list) {
         }
         if (curAttrName == _T("TS_TSP")) {  // Tidal current applet
           wxArrayString as;
-          wxString ts, ts1;
+          wxString ts = value ;
           // value does look like: , 310, 310, 44, 44, 116, 116, 119, 119, 122,
           // 122, 125, 125, 130, 130, 270, 270, 299, 299, 300, 300, 301, 301,
-          // 303, 303, 307,307509A,Helgoland,HW,310,0.9,044,0.2,116,1.5,
-          // 119,2.2,122,1.9,125,1.5,130,0.9,270,0.1,299,1.4,300,2.1,301,2.0,303,1.7,307,1.2
-          wxStringTokenizer tk(value, wxT(","));
-          ts1 =
-          tk.GetNextToken();  // get first token this will be skipped always
-          long l;
-          do {  // Skip up upto the first non number. This is Port Name
-            ts1 = tk.GetNextToken().Trim(false);
-            // some harbourID do have an alpha extension, therefore only check
-            // the left(2)
-          } while ((ts1.Left(2).ToLong(&l)));
-          ts = _T("Tidal Streams referred to<br><b>");
-          ts.Append(tk.GetNextToken()).Append(_T("</b> at <b>")).Append(ts1);
-          ts.Append(_T("</b><br><table >"));
-          int i = -6;
-          while (tk.HasMoreTokens()) {  // fill the current table
-            ts.Append(_T("<tr><td>"));
-            wxString s1(wxString::Format(_T("%+dh "), i));
-            ts.Append(s1);
-            ts.Append(_T("</td><td>"));
-            s1 = tk.GetNextToken();
-            ts.Append(s1);
-            s1 = "&#176</td><td>";
-            ts.Append(s1);
-            s1 = tk.GetNextToken();
-            ts.Append(s1);
-            ts.Append(" kn");
-            ts.Append(_T("</td></tr>"));
-            i++;
+          // 303, 303, 307,307509A,Helgoland,HW,310,0.9,044,0.2,116,1.5,119,2.2
+          //,122,1.9,125,1.5,130,0.9,270,0.1,299,1.4,300,2.1,301,2.0,303,1.7,307,1.2
+
+          // we will only use the last 28 fields for the table
+          wxStringTokenizer tk(ts, wxT(","));
+          while (tk.HasMoreTokens()){  // read data in arraystring
+            as.push_back( tk.GetNextToken().Trim(false).Trim(true));
           }
-          ts.Append(_T("</table>"));
-          value = ts;
+          if(as.GetCount()>=28){
+            as.RemoveAt(0, as.GetCount()-28); //remove garbage data from front
+            ts = wxString::Format(
+              "Tidal Streams referred to<br><b> %s </b> at <b> %s </b><table>"
+              ,as[1], as[0]);
+            int i = -6;
+            for (size_t j=2; j<as.GetCount()-1; j+=2){
+              ts.Append(wxString::Format(_T("<tr><td>%+dh "), i));
+              ts.Append(wxString::Format(_T("</td><td>%s&#176 "), as[j]));
+              ts.Append(wxString::Format(_T("</td><td>%s kn</td></tr> "), as[j+1]));
+              i++;
+            }
+            ts.Append(_T("</table>"));
+            value = ts;
+          }
         }
 
         if (isLight) {
