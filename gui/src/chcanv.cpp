@@ -302,7 +302,7 @@ int gamma_state;
 bool g_brightness_init;
 int last_brightness;
 
-int g_cog_predictor_width;
+extern int g_cog_predictor_width;
 extern double g_display_size_mm;
 
 extern ocpnFloatingToolbarDialog *g_MainToolbar;

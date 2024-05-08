@@ -165,6 +165,16 @@ extern bool g_bDebugCM93;
 extern bool g_bDebugS57;
 
 extern double g_ownship_predictor_minutes;
+extern int g_cog_predictor_style;
+extern wxString g_cog_predictor_color;
+extern int g_cog_predictor_endmarker;
+extern int g_cog_predictor_rangemarkers;
+extern int g_cog_predictor_width;
+extern int g_ownship_HDTpredictor_style;
+extern wxString g_ownship_HDTpredictor_color;
+extern int g_ownship_HDTpredictor_endmarker;
+extern int g_ownship_HDTpredictor_width;
+
 extern double g_ownship_HDTpredictor_miles;
 
 extern bool g_own_ship_sog_cog_calc;
@@ -860,8 +870,17 @@ bool ConfigMgr::SaveTemplate(wxString fileName) {
   conf->Write(_T ( "UseMagAPB" ), g_bMagneticAPB);
 
   conf->Write(_T ( "OwnshipCOGPredictorMinutes" ), g_ownship_predictor_minutes);
+  conf->Write(_T ( "OwnshipCOGPredictorStyle" ), g_cog_predictor_style);
+  conf->Write(_T ( "OwnshipCOGPredictorColor" ), g_cog_predictor_color);
+  conf->Write(_T ( "OwnshipCOGPredictorEndmarker" ), g_cog_predictor_endmarker);
+  conf->Write(_T ( "OwnshipCOGPredictorRangemarkers" ), g_cog_predictor_rangemarkers);
   conf->Write(_T ( "OwnshipCOGPredictorWidth" ), g_cog_predictor_width);
+  conf->Write(_T ( "OwnshipHDTPredictorStyle" ), g_ownship_HDTpredictor_style);
+  conf->Write(_T ( "OwnshipHDTPredictorColor" ), g_ownship_HDTpredictor_color);
+  conf->Write(_T ( "OwnshipHDTPredictorEndmarker" ), g_ownship_HDTpredictor_endmarker);
+  conf->Write(_T ( "OwnshipHDTPredictorWidth" ), g_ownship_HDTpredictor_width);
   conf->Write(_T ( "OwnshipHDTPredictorMiles" ), g_ownship_HDTpredictor_miles);
+
   conf->Write(_T ( "OwnShipIconType" ), g_OwnShipIconType);
   conf->Write(_T ( "OwnShipLength" ), g_n_ownship_length_meters);
   conf->Write(_T ( "OwnShipWidth" ), g_n_ownship_beam_meters);
@@ -1353,7 +1372,15 @@ bool ConfigMgr::CheckTemplate(wxString fileName) {
   CHECK_INT(_T ( "DefaultBoatSpeed" ), &g_defaultBoatSpeed);
 
   CHECK_INT(_T ( "OwnshipCOGPredictorMinutes" ), &g_ownship_predictor_minutes);
+  CHECK_INT(_T ( "OwnshipCOGPredictorStyle" ), &g_cog_predictor_style);
+  CHECK_STR(_T ( "OwnshipCOGPredictorColor" ), g_cog_predictor_color);
+  CHECK_INT(_T ( "OwnshipCOGPredictorEndmarker" ), &g_cog_predictor_endmarker);
+  CHECK_INT(_T ( "OwnshipCOGPredictorRangemarkers" ), &g_cog_predictor_rangemarkers);
   CHECK_INT(_T ( "OwnshipCOGPredictorWidth" ), &g_cog_predictor_width);
+  CHECK_INT(_T ( "OwnshipHDTPredictorStyle" ), &g_ownship_HDTpredictor_style);
+  CHECK_STR(_T ( "OwnshipHDTPredictorColor" ), g_ownship_HDTpredictor_color);
+  CHECK_INT(_T ( "OwnshipHDTPredictorEndmarker" ), &g_ownship_HDTpredictor_endmarker);
+  CHECK_INT(_T ( "OwnshipHDTPredictorWidth" ), &g_ownship_HDTpredictor_width);
   CHECK_INT(_T ( "OwnshipHDTPredictorMiles" ), &g_ownship_HDTpredictor_miles);
 
   CHECK_INT(_T ( "OwnShipIconType" ), &g_OwnShipIconType);

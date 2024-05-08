@@ -201,6 +201,16 @@ extern bool g_bDebugCM93;
 extern bool g_bDebugS57;
 
 extern double g_ownship_predictor_minutes;
+extern double g_ownship_predictor_minutes;
+extern int g_cog_predictor_style;
+extern wxString g_cog_predictor_color;
+extern int g_cog_predictor_endmarker;
+extern int g_cog_predictor_rangemarkers;
+extern int g_cog_predictor_width;
+extern int g_ownship_HDTpredictor_style;
+extern wxString g_ownship_HDTpredictor_color;
+extern int g_ownship_HDTpredictor_endmarker;
+extern int g_ownship_HDTpredictor_width;
 extern double g_ownship_HDTpredictor_miles;
 
 extern bool g_own_ship_sog_cog_calc;
@@ -562,6 +572,14 @@ int MyConfig::LoadMyConfig() {
   g_bShowChartBar = 1;
   g_defaultBoatSpeed = 6.0;
   g_ownship_predictor_minutes = 5;
+  g_cog_predictor_style = 3;
+  g_cog_predictor_color = _T("rgb(255,0,0)" );
+  g_cog_predictor_endmarker = 1;
+  g_cog_predictor_rangemarkers = 0;
+  g_ownship_HDTpredictor_style = 4;
+  g_ownship_HDTpredictor_color = _T("rgb(0,0,255)" );
+  g_ownship_HDTpredictor_endmarker = 1;
+  g_ownship_HDTpredictor_width = 2;
   g_cog_predictor_width = 3;
   g_ownship_HDTpredictor_miles = 1;
   g_n_ownship_min_mm = 2;
@@ -970,6 +988,14 @@ int MyConfig::LoadMyConfigRaw(bool bAsTemplate) {
   Read(_T ( "DefaultBoatSpeed" ), &g_defaultBoatSpeed);
 
   Read(_T ( "OwnshipCOGPredictorMinutes" ), &g_ownship_predictor_minutes);
+  Read(_T ( "OwnshipCOGPredictorStyle" ), &g_cog_predictor_style);
+  Read(_T ( "OwnshipCOGPredictorColor" ), &g_cog_predictor_color);
+  Read(_T ( "OwnshipCOGPredictorEndmarker" ), &g_cog_predictor_endmarker);
+  Read(_T ( "OwnshipCOGPredictorRangemarkers" ), &g_cog_predictor_rangemarkers);
+  Read(_T ( "OwnshipCOGPredictorWidth" ), &g_cog_predictor_width);
+  Read(_T ( "OwnshipHDTPredictorStyle" ), &g_ownship_HDTpredictor_style);
+  Read(_T ( "OwnshipHDTPredictorColor" ), &g_ownship_HDTpredictor_color);
+  Read(_T ( "OwnshipHDTPredictorEndmarker" ), &g_ownship_HDTpredictor_endmarker);
   Read(_T ( "OwnshipCOGPredictorWidth" ), &g_cog_predictor_width);
   Read(_T ( "OwnshipHDTPredictorMiles" ), &g_ownship_HDTpredictor_miles);
 
