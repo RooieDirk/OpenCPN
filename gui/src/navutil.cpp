@@ -201,7 +201,6 @@ extern bool g_bDebugCM93;
 extern bool g_bDebugS57;
 
 extern double g_ownship_predictor_minutes;
-extern double g_ownship_predictor_minutes;
 extern int g_cog_predictor_style;
 extern wxString g_cog_predictor_color;
 extern int g_cog_predictor_endmarker;
@@ -576,10 +575,10 @@ int MyConfig::LoadMyConfig() {
   g_cog_predictor_color = _T("rgb(255,0,0)" );
   g_cog_predictor_endmarker = 1;
   g_cog_predictor_rangemarkers = 0;
-  g_ownship_HDTpredictor_style = 4;
-  g_ownship_HDTpredictor_color = _T("rgb(0,0,255)" );
+  g_ownship_HDTpredictor_style = 105;
+  g_ownship_HDTpredictor_color = _T("rgb(255,0,0)" );
   g_ownship_HDTpredictor_endmarker = 1;
-  g_ownship_HDTpredictor_width = 2;
+  g_ownship_HDTpredictor_width = 3;
   g_cog_predictor_width = 3;
   g_ownship_HDTpredictor_miles = 1;
   g_n_ownship_min_mm = 2;
@@ -2456,6 +2455,15 @@ void MyConfig::UpdateSettings() {
   Write(_T ( "OwnshipCOGPredictorMinutes" ), g_ownship_predictor_minutes);
   Write(_T ( "OwnshipCOGPredictorWidth" ), g_cog_predictor_width);
   Write(_T ( "OwnshipHDTPredictorMiles" ), g_ownship_HDTpredictor_miles);
+  Write(_T ( "OwnshipCOGPredictorEndmarker" ), g_cog_predictor_endmarker);
+  Write(_T ( "OwnshipCOGPredictorRangemarkers" ), g_cog_predictor_rangemarkers);
+  Write(_T ( "OwnshipCOGPredictorWidth" ), g_cog_predictor_width);
+  Write(_T ( "OwnshipHDTPredictorStyle" ), g_ownship_HDTpredictor_style);
+  Write(_T ( "OwnshipHDTPredictorColor" ), g_ownship_HDTpredictor_color);
+  Write(_T ( "OwnshipHDTPredictorEndmarker" ), g_ownship_HDTpredictor_endmarker);
+  Write(_T ( "OwnshipCOGPredictorWidth" ), g_cog_predictor_width);
+  Write(_T ( "OwnshipHDTPredictorMiles" ), g_ownship_HDTpredictor_miles);
+
   Write(_T ( "OwnShipIconType" ), g_OwnShipIconType);
   Write(_T ( "OwnShipLength" ), g_n_ownship_length_meters);
   Write(_T ( "OwnShipWidth" ), g_n_ownship_beam_meters);

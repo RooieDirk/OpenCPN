@@ -235,7 +235,17 @@ extern int g_n_ownship_min_mm;
 extern double g_COGAvg;  // only needed for debug....
 
 extern int g_click_stop;
+
 extern double g_ownship_predictor_minutes;
+extern int g_cog_predictor_style;
+extern wxString g_cog_predictor_color;
+extern int g_cog_predictor_endmarker;
+extern int g_cog_predictor_rangemarkers;
+extern int g_cog_predictor_width;
+extern int g_ownship_HDTpredictor_style;
+extern wxString g_ownship_HDTpredictor_color;
+extern int g_ownship_HDTpredictor_endmarker;
+extern int g_ownship_HDTpredictor_width;
 extern double g_ownship_HDTpredictor_miles;
 
 extern bool g_bquiting;
@@ -5547,7 +5557,9 @@ void ChartCanvas::ShipIndicatorsDraw(ocpnDC &dc, int img_height,
   ref_dim = wxMin(ref_dim, 12);
   ref_dim = wxMax(ref_dim, 6);
 
-  wxColour cPred = PredColor();
+  wxColour cPred;
+  cPred.Set(g_ownship_HDTpredictor_color);
+  if(cPred == wxNullColour) cPred = PredColor();
 
   //  Establish some graphic element line widths dependent on the platform
   //  display resolution
@@ -5624,8 +5636,9 @@ void ChartCanvas::ShipIndicatorsDraw(ocpnDC &dc, int img_height,
         dash_long[1] = dash_long[0] / 2;
       }
 
-      wxPen ppPen2(cPred, g_cog_predictor_width, wxPENSTYLE_USER_DASH);
-      ppPen2.SetDashes(2, dash_long);
+      wxPen ppPen2(cPred, g_cog_predictor_width, (wxPenStyle)g_ownship_HDTpredictor_style);
+      if(g_ownship_HDTpredictor_style==(wxPenStyle)wxUSER_DASH)
+        ppPen2.SetDashes(2, dash_long);
       dc.SetPen(ppPen2);
       dc.StrokeLine(
           lGPSPoint.x + GPSOffsetPixels.x, lGPSPoint.y + GPSOffsetPixels.y,
@@ -5639,8 +5652,9 @@ void ChartCanvas::ShipIndicatorsDraw(ocpnDC &dc, int img_height,
         dash_long3[1] = g_cog_predictor_width / line_width * dash_long[1];
 
         wxPen ppPen3(GetGlobalColor(_T ( "UBLCK" )), wxMax(1, line_width),
-                     wxPENSTYLE_USER_DASH);
-        ppPen3.SetDashes(2, dash_long3);
+                     (wxPenStyle)g_ownship_HDTpredictor_style);
+        if(g_ownship_HDTpredictor_style==(wxPenStyle)wxUSER_DASH)
+          ppPen3.SetDashes(2, dash_long3);
         dc.SetPen(ppPen3);
         dc.StrokeLine(
             lGPSPoint.x + GPSOffsetPixels.x, lGPSPoint.y + GPSOffsetPixels.y,
@@ -5698,8 +5712,11 @@ void ChartCanvas::ShipIndicatorsDraw(ocpnDC &dc, int img_height,
         (int)(floor(g_Platform->GetDisplayDPmm() * hdt_dash_length * 0.9) /
               hdt_width);  // Short gap            |
 
-    wxPen ppPen2(cPred, hdt_width, wxPENSTYLE_USER_DASH);
-    ppPen2.SetDashes(2, dash_short);
+//     wxPen ppPen2(cPred, hdt_width, wxPENSTYLE_USER_DASH);
+//     ppPen2.SetDashes(2, dash_short);
+    wxPen ppPen2(cPred, hdt_width,(wxPenStyle)g_ownship_HDTpredictor_style);
+    if(g_ownship_HDTpredictor_style==(wxPenStyle)wxUSER_DASH)
+      ppPen2.SetDashes(2, dash_short);
 
     dc.SetPen(ppPen2);
     dc.StrokeLine(
@@ -5710,16 +5727,18 @@ void ChartCanvas::ShipIndicatorsDraw(ocpnDC &dc, int img_height,
     dc.SetPen(ppPen1);
     dc.SetBrush(wxBrush(GetGlobalColor(_T ( "GREY2" ))));
 
-    double nominal_circle_size_pixels = wxMax(
+    if(g_ownship_HDTpredictor_endmarker){
+      double nominal_circle_size_pixels = wxMax(
         4.0, floor(m_pix_per_mm * (ref_dim / 5.0)));  // not less than 4 pixel
 
-    // Scale the circle to ChartScaleFactor, slightly softened....
-    if (g_ShipScaleFactorExp > 1.0)
-      nominal_circle_size_pixels *= (log(g_ShipScaleFactorExp) + 1.0) * 1.1;
+      // Scale the circle to ChartScaleFactor, slightly softened....
+      if (g_ShipScaleFactorExp > 1.0)
+        nominal_circle_size_pixels *= (log(g_ShipScaleFactorExp) + 1.0) * 1.1;
 
-    dc.StrokeCircle(lHeadPoint.x + GPSOffsetPixels.x,
-                    lHeadPoint.y + GPSOffsetPixels.y,
-                    nominal_circle_size_pixels / 2);
+      dc.StrokeCircle(lHeadPoint.x + GPSOffsetPixels.x,
+                      lHeadPoint.y + GPSOffsetPixels.y,
+                      nominal_circle_size_pixels / 2);
+    }
   }
 
   // Draw radar rings if activated
