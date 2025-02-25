@@ -186,7 +186,7 @@ bool FontMgr::IsDefaultFontEntry(const MyFontDesc *font_desc) const {
 wxFont *FontMgr::GetFont(const wxString &TextElement, int requested_font_size) {
   // Look thru the font list for a match
   MyFontDesc *pmfd;
-  MyFontDesc *pmfd_c=NULL;
+  MyFontDesc *pmfd_c = NULL;
   auto node = m_fontlist->GetFirst();
 
   while (node) {
@@ -203,7 +203,7 @@ wxFont *FontMgr::GetFont(const wxString &TextElement, int requested_font_size) {
                  pmfd->m_font->GetPointSize() == requested_font_size) {
         return pmfd->m_font;
       }
-      //no font of right size available, remember font name to make a new one
+      // no font of right size available, remember font name to make a new one
       if (pmfd->m_is_default) pmfd_c = pmfd;
     }
     node = node->GetNext();
@@ -221,18 +221,19 @@ wxFont *FontMgr::GetFont(const wxString &TextElement, int requested_font_size) {
   } else
     new_size = requested_font_size;
 
-  if (pmfd_c){ // default font is available, need only new size for new font
+  if (pmfd_c) {  // default font is available, need only new size for new font
     wxColor color = pmfd_c->m_color;
     wxFont *nf = wxFont::New(pmfd_c->m_nativeInfo);
     nf->SetPointSize(requested_font_size);
-    MyFontDesc *pnewfd =  new MyFontDesc(TextElement, configkey, nf, color, is_default);
+    MyFontDesc *pnewfd =
+        new MyFontDesc(TextElement, configkey, nf, color, is_default);
     m_fontlist->Append(pnewfd);
 
     return pnewfd->m_font;
-  } else { //need a new safe font
+  } else {  // need a new safe font
     wxString face_name = g_default_font_facename.Length()
-    ? g_default_font_facename
-    : GetSystemFontFaceName();
+                             ? g_default_font_facename
+                             : GetSystemFontFaceName();
 
     wxString nativefont = GetSimpleNativeFont(new_size, face_name);
     wxFont *nf = wxFont::New(nativefont);
@@ -240,12 +241,12 @@ wxFont *FontMgr::GetFont(const wxString &TextElement, int requested_font_size) {
     wxColor color = GetDefaultFontColor(TextElement);
 
     MyFontDesc *pnewfd =
-    new MyFontDesc(TextElement, configkey, nf, color, is_default);
+        new MyFontDesc(TextElement, configkey, nf, color, is_default);
     m_fontlist->Append(pnewfd);
 
     return pnewfd->m_font;
   }
- return NULL;
+  return NULL;
 }
 
 MyFontDesc *FontMgr::GetFontDesc(const wxString &TextElement) const {
