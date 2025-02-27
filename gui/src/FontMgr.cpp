@@ -183,6 +183,10 @@ bool FontMgr::IsDefaultFontEntry(const MyFontDesc *font_desc) const {
   */
 }
 
+bool FontMgr::IsDefaultFontEntry(const int i) {
+  return m_fontlist->Item(i)->GetData()->m_is_default;
+}
+
 wxFont *FontMgr::GetFont(const wxString &TextElement, int requested_font_size) {
   // Look thru the font list for a match
   MyFontDesc *pmfd;

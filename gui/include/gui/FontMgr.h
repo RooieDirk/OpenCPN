@@ -279,6 +279,8 @@ public:
 
   static void Shutdown();
 
+  bool IsDefaultFontEntry(const int i);
+
 private:  // private for singleton
   FontMgr();
   ~FontMgr();

@@ -2838,9 +2838,11 @@ void MyConfig::UpdateSettings() {
   int nFonts = FontMgr::Get().GetNumFonts();
 
   for (int i = 0; i < nFonts; i++) {
-    wxString cfstring(FontMgr::Get().GetConfigString(i));
-    wxString valstring = FontMgr::Get().GetFullConfigDesc(i);
-    Write(cfstring, valstring);
+    if (FontMgr::Get().IsDefaultFontEntry(i)) {
+      wxString cfstring(FontMgr::Get().GetConfigString(i));
+      wxString valstring = FontMgr::Get().GetFullConfigDesc(i);
+      Write(cfstring, valstring);
+    }
   }
 
   //  Tide/Current Data Sources
