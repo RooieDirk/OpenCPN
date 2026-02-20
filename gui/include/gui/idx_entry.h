@@ -60,6 +60,7 @@ public:
   char IDX_type;      ///< Entry type identifier "TCtcIUu"
   char IDX_zone[40];  ///< Geographic zone identifier
   char IDX_station_name[MAXNAMELEN];  ///< Name of the tidal or current station
+  char IDX_datum[40];             ///< Datum used for this record
   double IDX_lon;        ///< Longitude of the station (in degrees, +East)
   double IDX_lat;        ///< Latitude of the station (in degrees, +North)
   int IDX_ht_time_off;   ///< High tide time offset (in minutes)
