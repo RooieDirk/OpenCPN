@@ -414,7 +414,7 @@ TC_Error_Code TCDS_Binary_Harmonic::LoadData(const wxString &data_file_path) {
       int depth = std::stoi(sval);
       pIDX->current_depth = depth;
     }
-    strcpy(pIDX->IDX_datum, get_datum(ptiderec->datum));
+    strncpy(pIDX->IDX_datum, get_datum(ptiderec->datum), MAXDATUMLEN - 1);
     pIDX->IDX_flood_dir = ptiderec->max_direction;
     pIDX->IDX_ebb_dir = ptiderec->min_direction;
 
