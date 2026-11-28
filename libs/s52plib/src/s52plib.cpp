@@ -2506,6 +2506,17 @@ int s52plib::RenderT_All(ObjRazRules *rzRules, Rules *rules, bool bTX) {
       wxFont *ChartTextDefaultFont =
           GetS52Utils()->GetDefaultFont(_("ChartTexts"), 0);
       int default_size = ChartTextDefaultFont->GetPointSize();
+      if(!strncmp(rzRules->obj->FeatureName, "LIGHTS", 6)){
+        ChartTextDefaultFont =
+        GetS52Utils()->GetDefaultFont(_("ChartLights"), 0);
+        default_size = ChartTextDefaultFont->GetPointSize();
+      }
+      if(!strncmp(rzRules->obj->FeatureName, "BOY", 3)){
+        ChartTextDefaultFont =
+        GetS52Utils()->GetDefaultFont(_("ChartObject"), 0);
+        default_size = ChartTextDefaultFont->GetPointSize();
+      }
+
 
       // In S52, the "body size" refers to the base size of the text characters
       // in display units (typically pixels). This is part of the text style
@@ -2545,6 +2556,7 @@ int s52plib::RenderT_All(ObjRazRules *rzRules, Rules *rules, bool bTX) {
           fontSize, ChartTextDefaultFont->GetFamily(),
           ChartTextDefaultFont->GetStyle(), fontweight_t,
           ChartTextDefaultFont->GetFaceName(), 1.0);
+
     }
 
     //  Render text at declared x/y of object
